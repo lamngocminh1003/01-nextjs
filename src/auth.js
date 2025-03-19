@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-// Your own logic for dealing with plaintext password strings; be careful!
-import { ZodError } from "zod";
-import { signInSchema } from "./lib/zod";
+import { InactiveAccountError, InvalidEmailPasswordError } from "./utils/error";
+import { sendRequest } from "./utils/api";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
@@ -10,45 +9,56 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   providers: [
     Credentials({
-      // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-      // e.g. domain, username, password, 2FA token, etc.
       credentials: {
         email: {},
         password: {},
       },
       authorize: async (credentials) => {
-        try {
-          console.log("credentials", credentials);
+        let res = await sendRequest({
+          method: "POST",
+          url: "http://localhost:8082/api/v1/auth/login",
+          body: {
+            ...credentials,
+          },
+        });
+        if (res) {
+          console.log("res", res);
 
-          let user = null;
-
-          // Simulate fetching user from database
-          user = {
-            _id: "123",
-            username: "lamngocminh1003@gmail.com",
-            email: "lamngocminh1003@gmail.com",
-            password: "$2a$10$abcdefg1234567890hijklmnopqrstuvwxyz", // Example hashed password
-            isVerify: "123",
-            type: "123",
-            role: "123",
-          };
-          if (!user) {
-            // No user found, so this is their first attempt to login
-            // Optionally, this is also the place you could do a user registration
-            throw new Error("Invalid credentials.");
+          if (res?.user) {
+            let user = res.user;
+            return {
+              _id: user?._id,
+              email: user?.email,
+              name: user?.name,
+              accessToken: res?.access_token,
+            };
+          } else if (+res.statusCode === 401) {
+            throw new InvalidEmailPasswordError();
+          } else if (+res.statusCode === 400) {
+            throw new InactiveAccountError();
           }
-
-          // return user object with their profile data
-          return user;
-        } catch (error) {
-          if (error instanceof ZodError) {
-            // Return `null` to indicate that the credentials are invalid
-            console.log("error", error);
-
-            return null;
-          }
+        } else {
+          throw new Error("Something went wrong");
         }
       },
     }),
-  ],
+  ], //  By default, the `id` property does not exist on `token` or `session`. See the [TypeScript](https://authjs.dev/getting-started/typescript) on how to add it.
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.user = {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          id: user.id,
+          accessToken: user.accessToken, // ✅ Thêm accessToken vào token
+        };
+      }
+      return token;
+    },
+    session({ session, token }) {
+      session.user = token.user; // ✅ Ensuring correct type
+      return session;
+    },
+  },
 });
