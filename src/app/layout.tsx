@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { AntdRegistry } from '@ant-design/nextjs-registry';
-
-import '@/app/globals.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import "@ant-design/v5-patch-for-react-19";
+import NextAuthWrapper from "@/library/next.auth.wrapper";
+import "@/app/globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +23,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AntdRegistry>
-          {children}
+          <NextAuthWrapper>
+            {children} <ToastContainer />
+          </NextAuthWrapper>
         </AntdRegistry>
-
       </body>
     </html>
   );

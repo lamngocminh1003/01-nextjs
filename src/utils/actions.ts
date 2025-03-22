@@ -3,20 +3,28 @@ import { signIn } from "@/auth";
 
 export async function authenticate(email: string, password: string) {
   try {
-    const r = await signIn("credentials", {
-      email: email,
-      password: password,
-      redirect: false, // Prevents redirect and ensures response is returned
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false, // Không redirect khi lỗi
     });
 
-    return r;
-  } catch (error) {
-    if ((error as any).name === "InvalidEmailPasswordError") {
-      return { error: (error as any).type, code: 1 };
-    } else if ((error as any).name === "InactiveAccountError") {
-      return { error: (error as any).type, code: 2 };
+    // Nếu có lỗi từ `signIn()`, trả về lỗi thay vì `throw`
+    if (res?.error) {
+      return { error: res.error, code: 1 }; // Lưu lỗi và gửi về
+    }
+
+    return res; // Đăng nhập thành công
+  } catch (error: any) {
+    console.error("Auth Error:", JSON.stringify(error)); // Log lỗi
+
+    // Nếu lỗi là `InvalidEmailPasswordError`
+    if (error.name.includes("InvalidEmailPasswordError")) {
+      return { error: "Email hoặc mật khẩu không đúng", code: 1 };
+    } else if (error.name.includes("InactiveAccountError")) {
+      return { error: "Tài khoản của bạn chưa được kích hoạt", code: 2 };
     } else {
-      return { error: "Internal server error", code: 0 };
+      return { error: "Lỗi máy chủ, vui lòng thử lại!", code: 0 };
     }
   }
 }

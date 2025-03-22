@@ -1,14 +1,31 @@
 "use client";
-import { Button, Col, Divider, Form, Input, Row } from "antd";
+import { Button, Col, Divider, Form, Input, Row, Spin } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
+import React from "react";
 import Link from "next/link";
 import { authenticate } from "@/utils/actions";
-
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const Login = () => {
+  const router = useRouter();
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loadingRegister, setLoadingRegister] = React.useState<boolean>(false);
+
   const onFinish = async (formData: any) => {
     const { email, password } = formData;
+    setLoading(true);
     const res = await authenticate(email, password);
-    console.log(res);
+    if (res?.error) {
+      toast.error(res?.error);
+      if (res?.code == 2) {
+        router.push("/auth/verify");
+        setLoading(false);
+      }
+    } else {
+      router.push("/dashboard");
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,7 +58,6 @@ const Login = () => {
             >
               <Input />
             </Form.Item>
-
             <Form.Item
               label="Password"
               name="password"
@@ -54,21 +70,29 @@ const Login = () => {
             >
               <Input.Password />
             </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Login
-              </Button>
-            </Form.Item>
+            <Form.Item style={{ textAlign: "center" }}>
+              <Spin spinning={loading}>
+                <Button type="primary" htmlType="submit">
+                  Login
+                </Button>
+              </Spin>
+            </Form.Item>{" "}
           </Form>
           <Link href={"/"}>
             <ArrowLeftOutlined /> Quay lại trang chủ
           </Link>
           <Divider />
-          <div style={{ textAlign: "center" }}>
-            Chưa có tài khoản?{" "}
-            <Link href={"/auth/register"}>Đăng ký tại đây</Link>
-          </div>
+          <Spin spinning={loadingRegister}>
+            <div style={{ textAlign: "center" }}>
+              Chưa có tài khoản?{" "}
+              <Link
+                href={"/auth/register"}
+                onClick={() => setLoadingRegister(true)}
+              >
+                Đăng ký tại đây
+              </Link>
+            </div>
+          </Spin>
         </fieldset>
       </Col>
     </Row>

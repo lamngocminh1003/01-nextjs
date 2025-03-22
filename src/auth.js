@@ -16,27 +16,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         let res = await sendRequest({
           method: "POST",
-          url: "http://localhost:8082/api/v1/auth/login",
+          url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/login`,
           body: {
             ...credentials,
           },
         });
-        if (res) {
-          console.log("res", res);
 
-          if (res?.user) {
-            let user = res.user;
+        if (res.statusCode === 201) {
+          if (res?.data?.user) {
+            let user = res.data.user;
             return {
               _id: user?._id,
               email: user?.email,
               name: user?.name,
               accessToken: res?.access_token,
             };
-          } else if (+res.statusCode === 401) {
-            throw new InvalidEmailPasswordError();
-          } else if (+res.statusCode === 400) {
-            throw new InactiveAccountError();
           }
+        } else if (+res.statusCode === 401) {
+          throw new InvalidEmailPasswordError();
+        } else if (res.statusCode === 400) {
+          throw new InactiveAccountError();
         } else {
           throw new Error("Something went wrong");
         }
@@ -59,6 +58,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session({ session, token }) {
       session.user = token.user; // ✅ Ensuring correct type
       return session;
+    },
+    authorized: async ({ auth }) => {
+      // Logged in users are authenticated, otherwise redirect to login page
+      return !!auth;
     },
   },
 });
