@@ -6,6 +6,7 @@ import Link from "next/link";
 import { sendRequest } from "@/utils/api";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+const { Item } = Form;
 
 const Register = () => {
   const router = useRouter();
@@ -48,7 +49,7 @@ const Register = () => {
             autoComplete="off"
             layout="vertical"
           >
-            <Form.Item
+            <Item
               label="Email"
               name="email"
               rules={[
@@ -59,9 +60,9 @@ const Register = () => {
               ]}
             >
               <Input />
-            </Form.Item>
+            </Item>
 
-            <Form.Item
+            <Item
               label="Password"
               name="password"
               rules={[
@@ -72,19 +73,19 @@ const Register = () => {
               ]}
             >
               <Input.Password />
-            </Form.Item>
+            </Item>
 
-            <Form.Item label="Name" name="name">
+            <Item label="Name" name="name">
               <Input />
-            </Form.Item>
+            </Item>
 
-            <Form.Item style={{ textAlign: "center" }}>
+            <Item style={{ textAlign: "center" }}>
               <Spin spinning={loading}>
                 <Button type="primary" htmlType="submit">
                   Submit
                 </Button>{" "}
               </Spin>
-            </Form.Item>
+            </Item>
           </Form>
           <Link href={"/"}>
             <ArrowLeftOutlined /> Quay lại trang chủ
